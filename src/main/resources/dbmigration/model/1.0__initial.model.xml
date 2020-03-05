@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<migration xmlns="http://ebean-orm.github.io/xml/ns/dbmigration">
+    <changeSet type="apply">
+        <createTable name="address" identityType="identity" pkName="pk_address">
+            <column name="id" type="bigint" primaryKey="true"/>
+            <column name="street_id" type="bigint" references="street.id" foreignKeyName="fk_address_street_id" foreignKeyIndex="ix_address_street_id"/>
+        </createTable>
+        <createTable name="customer" identityType="identity" pkName="pk_customer">
+            <column name="dtype" type="integer(31)" notnull="true"/>
+            <column name="id" type="bigint" primaryKey="true"/>
+            <column name="adress_id" type="bigint" references="address.id" foreignKeyName="fk_customer_adress_id" foreignKeyIndex="ix_customer_adress_id"/>
+            <column name="notes" type="varchar"/>
+        </createTable>
+        <createTable name="street" identityType="identity" pkName="pk_street">
+            <column name="dtype" type="integer(31)" notnull="true"/>
+            <column name="id" type="bigint" primaryKey="true"/>
+            <column name="name" type="varchar"/>
+            <column name="number" type="varchar"/>
+        </createTable>
+    </changeSet>
+</migration>

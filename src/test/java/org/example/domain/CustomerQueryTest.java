@@ -1,7 +1,6 @@
 package org.example.domain;
 
 import io.ebean.DB;
-import org.example.domain.query.QCustomer;
 import org.junit.Test;
 
 public class CustomerQueryTest {
@@ -12,8 +11,8 @@ public class CustomerQueryTest {
     DB.find(Customer.class)
         .findList();
 
-    new QCustomer()
-      .id.greaterOrEqualTo(1L)
-      .findList();
+    //new QCustomer()
+    //  .id.greaterOrEqualTo(1L)
+    //  .findList();
   }
 }

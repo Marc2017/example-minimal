@@ -1,10 +1,11 @@
 package org.example.domain;
 
-import io.ebean.DB;
-import io.ebean.Database;
+import io.ebean.*;
+import org.example.domain.parent.Address;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 
 /**
@@ -21,58 +22,58 @@ public class CustomerTest {
   @Test
   public void insert_via_server() {
 
-    Customer rob = new Customer("Rob");
+      Database server = DB.getDefault();
 
-    Database server = DB.getDefault();
-    server.save(rob);
+      //Empty DB
+      Transaction txn = server.beginTransaction();
+      server.extended().delete(server.createQuery(Customer.class), txn);
+      server.extended().delete(server.createQuery(Address.class), txn);
+      server.extended().delete(server.createQuery(Street.class), txn);
+      txn.commit();
 
-    assertNotNull(rob.getId());
-  }
+      //=========================================================================
+      // 1 - Create Data (Customer(dtype 1) -> Address(no dtype) -> Street(dtype 1)
+      //=========================================================================
+      txn = server.beginTransaction();
+      Street street = new Street();
+      server.save(street);
+      Address address = new Address();
+      address.setStreet(street);
+      server.save(address);
+      Customer customer = new Customer();
+      customer.setAddress(address);
+      server.save(customer);
+      txn.commit();
 
-  /**
-   * Use the Ebean singleton (effectively using the "default server").
-   */
-  @Test
-  public void insert_via_model() {
+      //=========================================================================
+      // 2 - Read Data (no Cache Hit)
+      //=========================================================================
+      reloadCustomer(server, customer, false);  //returns Street -> OK
+      reloadCustomer(server, customer, false);  //returns Street -> OK
 
-    Customer jim = new Customer("Jim");
-    jim.save();
+      //=========================================================================
+      // 3 - Read Data (L2-Cache Hit)
+      //=========================================================================
+      reloadCustomer(server, customer, true); //returns Street -> OK
+      reloadCustomer(server, customer, true); //returns StreetParent -> NOT OK
+    }
 
-    assertNotNull(jim.getId());
-  }
 
+    public static void reloadCustomer(Database server, Customer customer, boolean l2Cache) {
+      Transaction txn = null; //server.beginTransaction();
 
-  /**
-   * Find and then update.
-   */
-  @Test
-  public void updateRob() {
+      //Load Customer via Query, L2Cache on/off
+      Query<Customer> customerQuery = server.createQuery(Customer.class).where().eq("id", customer.getId()).query();
+      customerQuery = customerQuery.setUseCache(l2Cache);
+      customerQuery = customerQuery.setUseQueryCache(l2Cache);
+      Customer customerReloaded = server.extended().findOne(customerQuery, txn);
 
-    Customer newBob = new Customer("Bob");
-    newBob.save();
+      //Access Street by lazy Loading
+      Class streetClassLazyLoaded = customerReloaded.getAddress().getStreet().getClass();
 
-    Customer bob = DB.find(Customer.class)
-      .where().eq("name", "Bob")
-      .findOne();
+      //Show Cache Hits
+      System.out.println("Class of Street (Cache on: "+l2Cache+"): "+ streetClassLazyLoaded + " | Cache Hit: "+ server.getServerCacheManager().getQueryCache(streetClassLazyLoaded).getStatistics(false).getHitCount());
 
-    bob.setNotes("Doing an update");
-    bob.save();
-  }
-
-  /**
-   * Execute an update without a prior query.
-   */
-  @Test
-  public void statelessUpdate() {
-
-    Customer newMob = new Customer("Mob");
-    newMob.save();
-
-    Customer upd = new Customer();
-    upd.setId(newMob.getId());
-    upd.setNotes("Update without a fetch");
-
-    upd.update();
-  }
+    }
 
 }

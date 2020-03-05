@@ -18,7 +18,8 @@ public class MainDbMigration {
     //System.setProperty("ddl.migration.pendingDropsFor", "1.1");
 
     DbMigration dbMigration = DbMigration.create();
-    dbMigration.setPlatform(Platform.POSTGRES);
+    dbMigration.setPlatform(Platform.MYSQL55);
+    dbMigration.setStrictMode(false);
     // generate the migration ddl and xml
     dbMigration.generateMigration();
   }
