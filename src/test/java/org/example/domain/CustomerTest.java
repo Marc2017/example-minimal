@@ -2,6 +2,7 @@ package org.example.domain;
 
 import io.ebean.*;
 import org.example.domain.parent.Address;
+import org.junit.Assert;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotNull;
@@ -48,18 +49,22 @@ public class CustomerTest {
       //=========================================================================
       // 2 - Read Data (no Cache Hit)
       //=========================================================================
-      reloadCustomer(server, customer, false);  //returns Street -> OK
-      reloadCustomer(server, customer, false);  //returns Street -> OK
+      Class streetClass = reloadCustomer(server, customer, false);  //returns Street -> OK
+      Assert.assertEquals("org.example.domain.Street", streetClass.getName());
+      streetClass = reloadCustomer(server, customer, false);  //returns Street -> OK
+      Assert.assertEquals("org.example.domain.Street", streetClass.getName());
 
       //=========================================================================
       // 3 - Read Data (L2-Cache Hit)
       //=========================================================================
-      reloadCustomer(server, customer, true); //returns Street -> OK
-      reloadCustomer(server, customer, true); //returns StreetParent -> NOT OK
+      streetClass = reloadCustomer(server, customer, true); //returns Street -> OK
+      Assert.assertEquals("org.example.domain.Street", streetClass.getName());
+      streetClass = reloadCustomer(server, customer, true); //returns StreetParent -> NOT OK
+      Assert.assertEquals("org.example.domain.Street", streetClass.getName());
     }
 
 
-    public static void reloadCustomer(Database server, Customer customer, boolean l2Cache) {
+    public Class reloadCustomer(Database server, Customer customer, boolean l2Cache) {
       Transaction txn = null; //server.beginTransaction();
 
       //Load Customer via Query, L2Cache on/off
@@ -73,6 +78,8 @@ public class CustomerTest {
 
       //Show Cache Hits
       System.out.println("Class of Street (Cache on: "+l2Cache+"): "+ streetClassLazyLoaded + " | Cache Hit: "+ server.getServerCacheManager().getQueryCache(streetClassLazyLoaded).getStatistics(false).getHitCount());
+
+      return streetClassLazyLoaded;
 
     }
 
